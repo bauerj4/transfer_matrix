@@ -1,0 +1,4 @@
+#define SYSMEM_MB 10000
+#define OPENMP 8
+#define MATRIX_SIZE 10
+#define POWER_INTERATION 1

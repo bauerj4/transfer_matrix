@@ -2,6 +2,154 @@
 #include "../include/proto.h"
 #include "../include/transfer_options.h"
 #include <stdlib.h>
+#include <mpi.h>
+#include <math.h>
+
+/*
+  Compute the maximal eigenvalue with a
+  power iteration.
+*/
+
+double Power_Iteration(double ** mat, int N)
+{
+  int i;
+  double lambda_max, f_old_norm, f_new_norm, diff;
+
+  diff = 1. / 1.e-127;  // Large number
+
+  f_old = VectorMalloc(N);
+  f_new = VectorMalloc(N);
+
+  // Guess a normalized vector of ones
+  for (i=0; i < N; i++)
+    f_old[i] = 1;
+
+  f_old_norm = Norm(f_old, N);
+  for (i=0; i < N; i++)
+    f_old[i] /= f_old_norm;
+
+
+  // main loop, terminate upon convergence
+
+  while (diff > ITERATION_TOLERANCE)
+    {
+      diff = 0.;
+      MPI_MatrixMultiplyToVector(LocalTransferMatrix, f_old, N);
+      f_old_norm = Norm(f_old,N);
+      for (i=0; i<N; i++)
+	{
+	  f_old[i] /= f_old_norm;
+	  //printf("f_old[%d] = %f\n", i, f_old[i]);
+	  diff += fabs(f_old[i] - f_new[i]) * fabs(f_old[i] - f_new[i]); 
+	  //printf("diff = %f\n", diff);
+	  f_new[i] = f_old[i];
+          //printf("f_new[%d] = %f\n", i, f_new[i]);
+	}
+      //printf("diff = %f\n", diff);
+
+    }
+
+  return 0;
+}
+
+
+/*
+  Compute the Euclidean norm of a vector
+*/
+
+double Norm(double * a,int N)
+{
+  double norm;
+  norm = Dot(a,a,N);
+  norm = pow(norm, 0.5);
+  return norm;
+}
+
+/*
+  Multiply a matrix into a vector from a local copy
+*/
+
+void MPI_MatrixMultiplyToVector(double ** mat, double * vec, int N)
+{
+  int i, rowmin, rowmax, sendcount;
+  int * recvcounts;
+  double ThisElement;
+  double * MyVector;
+
+
+  /*
+    Determine how many elements to receive from each task
+  */
+
+  recvcounts = malloc(NTasks * sizeof(int));
+
+  for (i=0; i < NTasks; i++)
+    {
+      if (i != NTasks - 1)
+	{
+	  recvcounts[i] = ProcBoundaries[i+1] - ProcBoundaries[i];
+	}
+      else
+	{
+	  recvcounts[i] = TransferCount - ProcBoundaries[i];
+	}
+    }
+
+  /*
+    Determine how many elements to send
+  */
+
+  rowmin = ProcBoundaries[ThisTask];
+  if (ThisTask != NTasks - 1)
+    rowmax = ProcBoundaries[ThisTask + 1];
+  else
+    rowmax = TransferCount - ProcBoundaries[ThisTask];
+
+  MyVector = VectorMalloc(recvcounts[ThisTask]);//VectorMalloc(rowmax - rowmin);
+
+  //PrintMatrix(mat, recvcounts[ThisTask], TransferCount);
+
+  // Get rowspan elements by exploiting the 1D partition
+  for (i=0; i < /*rowmax - rowmin*/ recvcounts[ThisTask]; i++)
+    {
+      ThisElement = Dot(mat[i], vec, N);
+      //printf("ThisElement = %f\n", ThisElement);
+      MyVector[i] = ThisElement;
+    }
+  
+  //printf("(min, max) on thread %d = %d, %d\n", ThisTask, rowmin, rowmax);
+  sendcount = recvcounts[ThisTask];//rowmax - rowmin;
+  //printf("sendcount[%d] = %d\n", ThisTask, sendcount);
+
+  /*
+  for (i=0; i < NTasks; i++)
+    {
+      printf("recvcounts[%d] = %d\n", i, recvcounts[i]);
+      //printf("sendcount[%d] = %d\n", ThisTask, sendcount);
+      }*/
+  MPI_Allgatherv(MyVector, sendcount, MPI_DOUBLE, vec, recvcounts, ProcBoundaries, MPI_DOUBLE, MPI_COMM_WORLD);
+
+  //for (i=0; i < N; i++)
+  //  printf("Vector[%d] = %f\n",i, vec[i]);
+  VectorFree(MyVector, sendcount);
+}
+
+
+/*
+  Just the dot product between two vectors
+*/
+
+double Dot(double * a, double * b, int N)
+{
+  int i;
+  double dot = 0;
+  for (i=0; i<N; i++)
+    {
+      dot += a[i]*b[i];
+    }
+  return dot;
+}
+
 
 /*
   Allocate memory to an N X M matrix
@@ -58,4 +206,32 @@ void VectorFree(double * vec, int N)
 {
   ByteCount -= N * sizeof(double);
   free(vec);
+}
+
+
+void PrintMatrix(double ** matrix, int n, int m)
+{
+  int i,j;
+  double element;
+  printf("Matrix on Task %d: \n", ThisTask);
+  for (j=0; j<m; j++)
+    {
+      for (i=0; i<n; i++)
+        {
+          element = matrix[i][j];
+
+          if (i == 0)
+            {
+              printf("[%f, ", element);
+            }
+          else if (i == n - 1)
+            {
+              printf(",%f]\n", element);
+            }
+          else
+            {
+              printf("%f, ", element);
+            }
+        }
+    }
 }

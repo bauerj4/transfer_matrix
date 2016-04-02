@@ -28,6 +28,9 @@ int main(int argc, char ** argv)
     Do linear algebra operations
   */
 
+  Power_Iteration(LocalTransferMatrix, TransferCount);
+
+
   /*
     Compute relevant statistical quantities
     from the partition function.

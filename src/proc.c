@@ -18,6 +18,6 @@ void ProcessorPartition1D(int * partition_arr, int N)
       mymin = n * ThisTask + nremainder;
     }
 
-  //printf("I am thread %d / %d and my min is %d\n", ThisTask + 1, NTasks, mymin);
+  printf("I am thread %d / %d and my min is %d\n", ThisTask + 1, NTasks, mymin);
   MPI_Allgather(&mymin, 1, MPI_INT, partition_arr, 1, MPI_INT, MPI_COMM_WORLD);
 }

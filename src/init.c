@@ -53,12 +53,20 @@ void Init()
     {
       //LocalTransferMatrix = MatrixMalloc(ProcBoundaries[ThisTask+1] - ProcBoundaries[ThisTask] + 1, TransferCount + 1);
       LocalTransferMatrix = MatrixMalloc(ProcBoundaries[ThisTask+1] - ProcBoundaries[ThisTask], TransferCount);
+      //LocalSpinMatrix = MatrixMalloc(ProcBoundaries[ThisTask+1] - ProcBoundaries[ThisTask], TransferCount);
+      LocalSpinMatrix = MatrixMalloc(TransferCount, MATRIX_SIZE);
     }
   else
     {
       //LocalTransferMatrix = MatrixMalloc(TransferCount -  ProcBoundaries[ThisTask] + 1, TransferCount + 1);
       LocalTransferMatrix = MatrixMalloc(TransferCount -  ProcBoundaries[ThisTask], TransferCount);
+      //LocalSpinMatrix = MatrixMalloc(TransferCount -  ProcBoundaries[ThisTask], TransferCount);
+      LocalSpinMatrix = MatrixMalloc(TransferCount, MATRIX_SIZE);
     }
+
+  MPI_Allreduce(&ByteCount, &ByteCount_G, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  if (ThisTask == 0)
+    printf("Allocated %f MB of system memory across %d threads.\n", (double)ByteCount_G/1.e6, NTasks);
   /*
     Now assign values to the elements based on Hamiltonian calculations
   */
@@ -86,6 +94,6 @@ void Init()
 	  LocalTransferMatrix[i][j] = 0;
       }
 
-  //PrintMatrix(LocalTransferMatrix, term-1, TransferCount);
-    
+  PrintMatrix(LocalTransferMatrix, term-1, TransferCount);
+  GeneratePermutation();
 }

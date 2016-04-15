@@ -2,6 +2,7 @@
 #include "../include/proto.h"
 #include "../include/transfer_options.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <mpi.h>
 #include <math.h>
 
@@ -214,23 +215,23 @@ void PrintMatrix(double ** matrix, int n, int m)
   int i,j;
   double element;
   printf("Matrix on Task %d: \n", ThisTask);
-  for (j=0; j<m; j++)
+  for (i=0; i<n; i++)
     {
-      for (i=0; i<n; i++)
+      for (j=0; j<m; j++)
         {
           element = matrix[i][j];
 
-          if (i == 0)
+          if (j == 0)
             {
-              printf("[%f, ", element);
+              printf("[%10.10f, ", element);
             }
-          else if (i == n - 1)
+          else if (j == m - 1)
             {
-              printf(",%f]\n", element);
+              printf(",%10.10f]\n", element);
             }
           else
             {
-              printf("%f, ", element);
+              printf("%10.10f, ", element);
             }
         }
     }

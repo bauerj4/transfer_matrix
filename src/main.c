@@ -29,6 +29,8 @@ int main(int argc, char ** argv)
   */
 
   Power_Iteration(LocalTransferMatrix, TransferCount);
+  printf("Done power iteration.\n");
+  PrintMatrix(LocalSpinMatrix, TransferCount, MATRIX_SIZE);
 
 
   /*

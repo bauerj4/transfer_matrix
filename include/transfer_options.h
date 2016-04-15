@@ -1,5 +1,7 @@
 #define SYSMEM_MB 10000
 #define OPENMP 8
-#define MATRIX_SIZE 15
+#define MATRIX_SIZE 4
 #define POWER_ITERATION 1
 #define ITERATION_TOLERANCE 1e-05
+#define B_FIELD 0.0
+#define ACTION 1.0

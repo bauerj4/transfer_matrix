@@ -33,4 +33,14 @@ void Finalize();
   Thermodynamics
 */
 
-double IsingInteraction(double spin1, double spin2, double action, double applied_field);
+double IsingInteraction(double * spin1, double * spin2, double action, double applied_field);
+void GeneratePermutation();
+void HeapRecursive(int n, double * arr);
+void Swap(double * a, double * b);
+
+/*
+  Stats
+*/
+
+long int choose(int n, int k);
+long int factorial(int n);

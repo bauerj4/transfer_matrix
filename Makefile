@@ -3,7 +3,7 @@ PYTHON   =  /usr/bin/python
 CFLAGS   =
 CC       = mpicc
 INCL	 = include/allvars.h include/proto.h include/transfer_options.h
-SRC 	 = src/main.c src/allvars.c src/init.c src/proc.c src/linalg.c src/thermodynamics.c
+SRC 	 = src/main.c src/allvars.c src/init.c src/proc.c src/linalg.c src/thermodynamics.c src/stats.c
 
 make:
 	python make_macros.py

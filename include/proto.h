@@ -38,6 +38,7 @@ void GenerateTransferMatrix(double Temperature);
 double IsingInteraction(double * spin1, double * spin2, double action, double applied_field);
 void GeneratePermutation();
 void HeapRecursive(int n, double * arr);
+void LexicographicPermutations(int n, double * arr);
 void Swap(double * a, double * b);
 
 /*

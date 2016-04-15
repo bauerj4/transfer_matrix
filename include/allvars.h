@@ -10,8 +10,8 @@
 
 extern int ThisTask;
 extern int NTasks;
-extern int ByteCount;
-extern int ByteCount_G;
+extern long int ByteCount;
+extern long int ByteCount_G;
 extern int TransferCount;
 extern int GhostRowUp;
 extern int GhostRowDown;

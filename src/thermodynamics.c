@@ -23,7 +23,8 @@ void TemperatureSweep()
       GenerateTransferMatrix(Temperature);
       ThisLambda = Power_Iteration(LocalTransferMatrix, TransferCount); 
       ThisPart = MATRIX_SIZE * log(ThisLambda);
-      printf("Temperature = %5.5f Lambda = %5.5f ThisPart = %5.5f\n", Temperature, ThisLambda, ThisPart);
+      if (ThisTask == 0)
+	printf("Temperature = %5.5f Lambda = %5.5f ThisPart = %5.5f\n", Temperature, ThisLambda, ThisPart);
       T_arr[ThisStep] = Temperature;
       Beta_arr[ThisStep] = 1./(Temperature * BOLTZMANN_CONSTANT);
       Partition_arr[ThisStep] = ThisPart / (MATRIX_SIZE * MATRIX_SIZE);
@@ -91,32 +92,12 @@ double IsingInteraction(double * spin1, double * spin2, double action, double ap
       sum_interaction += 0.5 * spin2[i] * spin2[(i+1)%MATRIX_SIZE];
     }
 
-  /*
-  for (i=0; i < TransferCount; i++)
-    {
-      sum_interaction -= spin1[i] * spin2[i];
-    }
-
-  for (i=0; i < TransferCount - 1; i++)
-    {
-      sum_interaction -= action * spin1[i] * spin1[i+1];
-      sum_interaction -= applied_field * spin1[i];
-      }*/
-
-  /*
-    Add ghost row terms to impose BCs
-  */
-
-  //printf("Sum Interaction = %f\n", sum_interaction);
   return sum_interaction;
 }
 
 /*
   Generate the ith of 2^N permutations of N half spins which 
   becomes the ith row in the 1D partitioned spin matrix 
-
-  Works up to size 3... need to check what's going wrong.  
-  Will write the rest assuming I know the transfer matrix
 */
 
 void GeneratePermutation()
@@ -130,6 +111,10 @@ void GeneratePermutation()
     Start by saying, "What is every possible permutation of
     k spin ups and N - k spin downs" for all k. Add each
     such permutation to the spin matrix.
+
+    Alternatively, use some long lost Indian non-recursive
+    algorithm... More efficient by a factor of >10^6 b/c
+    it doesn't generate repeats.
   */
 
   HeapCounter = 0;
@@ -148,11 +133,16 @@ void GeneratePermutation()
 	  
 	}
 
+#ifdef USE_HEAPS_ALGORITHM
       // Now do Heap's algorithm on permutation_array
       HeapRecursive(MATRIX_SIZE, permutation_array);
+#else
+      LexicographicPermutations(MATRIX_SIZE, permutation_array);
+      //PrintMatrix(LocalSpinMatrix, TransferCount, MATRIX_SIZE);
+#endif
     }
 
-  
+  //PrintMatrix(LocalSpinMatrix, TransferCount, MATRIX_SIZE);
   free(permutation_array);
 
 }
@@ -184,6 +174,58 @@ int PermutationAlreadyFound(double * arr)
   return wasFound;
 }
 
+
+void LexicographicPermutations(int n, double * arr)
+{
+  int i, j, k, l; // k and l are not loop integers
+  int still_permutations;
+
+  still_permutations = 1;
+  //MaxPermutations = 0;
+  while (still_permutations==1)
+    {
+      for (i=0; i<n; i++)
+	LocalSpinMatrix[MaxPermutations][i] = arr[i];
+      MaxPermutations++;
+      k=-1;
+      for (i=0; i < n-1; i++)
+	if (arr[i] > arr[i+1])
+	  k=i;
+      
+      if (k == -1) // Then this is the last permutation
+	{
+	  //for (i=0; i<n; i++)
+	  //  LocalSpinMatrix[MaxPermutations][i] = arr[i];
+	  still_permutations=0;
+	  //MaxPermutations++;
+	}
+      
+      else // We need to do some swapping
+	{
+	  l = k + 1;
+	  for (i=k+1; i < n; i++)
+	    {
+	      if (arr[i] < arr[k])
+		l = i;  // Largest index s.t. a[l] > a[k]
+	    }
+	  
+	  Swap(&arr[k], &arr[l]); 
+
+	  j = n - 1;
+	  for (i=k+1; i < j; i++) // Reverse the sequence above k+1
+	    {
+	      Swap(&arr[i], &arr[j]);
+	      j--;
+	    }
+	  //for (i=0; i < n; i++)
+	  // {
+	  //   printf("arr[%d] = %f\n",i,arr[i]);
+	  //   LocalSpinMatrix[MaxPermutations][i] = arr[i];
+	  // }
+	  //MaxPermutations++;
+	}
+    }
+}
 
 void HeapRecursive(int n, double * arr)
 {

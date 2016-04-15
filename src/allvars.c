@@ -4,8 +4,8 @@
 
 int ThisTask;
 int NTasks;
-int ByteCount;
-int ByteCount_G;
+long int ByteCount;
+long int ByteCount_G;
 int TransferCount;
 int GhostRowUp;
 int GhostRowDown;

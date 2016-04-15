@@ -73,9 +73,9 @@ void Init()
       LocalSpinMatrix = MatrixMalloc(TransferCount, MATRIX_SIZE);
     }
 
-  MPI_Allreduce(&ByteCount, &ByteCount_G, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&ByteCount, &ByteCount_G, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
   if (ThisTask == 0)
-    printf("Allocated %f MB of system memory across %d threads.\n", (double)ByteCount_G/1.e6, NTasks);
+    printf("Allocated %10.5f MB of system memory across %d threads.\n", (double)ByteCount_G/1.e6, NTasks);
   /*
     Now assign values to the spin matrix
   */

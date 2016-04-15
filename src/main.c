@@ -19,26 +19,9 @@ int main(int argc, char ** argv)
   MPI_Init(&argc, &argv); // Open all communication channels
   Init();
   
-  /*
-    Begin the run by allocating memory, and 
-    assigning 1D partitioning to all threads
-  */
+  TemperatureSweep();
 
-  /*
-    Do linear algebra operations
-  */
-
-  Power_Iteration(LocalTransferMatrix, TransferCount);
-  printf("Done power iteration.\n");
-  PrintMatrix(LocalSpinMatrix, TransferCount, MATRIX_SIZE);
-
-
-  /*
-    Compute relevant statistical quantities
-    from the partition function.
-  */
-
-
+  Finalize();
   MPI_Finalize(); // Finalize
   return 0; // Success
 }

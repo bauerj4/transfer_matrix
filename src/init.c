@@ -20,6 +20,15 @@ void Init()
 
   ProcBoundaries = malloc(NTasks * sizeof(int));
   ProcessorPartition1D(ProcBoundaries, TransferCount);
+
+  /*
+    Allocate memory to output arrays
+  */
+
+  ThisStep = 0;
+  T_arr = VectorMalloc(NTEVALS);
+  Beta_arr = VectorMalloc(NTEVALS);
+  Partition_arr = VectorMalloc(NTEVALS);
   
   /*
     Now set each thread's ghost rows
@@ -68,32 +77,8 @@ void Init()
   if (ThisTask == 0)
     printf("Allocated %f MB of system memory across %d threads.\n", (double)ByteCount_G/1.e6, NTasks);
   /*
-    Now assign values to the elements based on Hamiltonian calculations
+    Now assign values to the spin matrix
   */
-
-  if (ThisTask != NTasks - 1)
-    {
-      //term = ProcBoundaries[ThisTask+1] - ProcBoundaries[ThisTask] + 1;
-      term = ProcBoundaries[ThisTask+1] - ProcBoundaries[ThisTask];
-    }
-  else
-    {
-      //term = TransferCount - ProcBoundaries[ThisTask] + 1;
-      term = TransferCount - ProcBoundaries[ThisTask];
-    }
-
-  
-
-  // Assign all values to 1 for debugging
-  for (i=0; i<term; i++) // Allocate to ghost row down
-    for (j=0; j < TransferCount; j++) // Allocate to ghost column right
-      {
-	if (fabs((i + ProcBoundaries[ThisTask]) - j) <= 1)
-	  LocalTransferMatrix[i][j] = 1;
-	else
-	  LocalTransferMatrix[i][j] = 0;
-      }
-
-  PrintMatrix(LocalTransferMatrix, term-1, TransferCount);
   GeneratePermutation();
+
 }

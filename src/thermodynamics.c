@@ -3,6 +3,73 @@
 #include "../include/transfer_options.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
+
+
+/*
+  Do a sweep over the temperature range, calculating relevant
+  quantities and storing them
+*/
+
+void TemperatureSweep()
+{
+  DeltaT = (T_MAX - T_MIN) / ((double)NTEVALS);
+  Temperature = T_MIN;
+  double ThisLambda = 0.;
+  double ThisPart = 0.;
+
+  while (Temperature < T_MAX)
+    {
+      GenerateTransferMatrix(Temperature);
+      ThisLambda = Power_Iteration(LocalTransferMatrix, TransferCount); 
+      ThisPart = MATRIX_SIZE * log(ThisLambda);
+      printf("Temperature = %5.5f Lambda = %5.5f ThisPart = %5.5f\n", Temperature, ThisLambda, ThisPart);
+      T_arr[ThisStep] = Temperature;
+      Beta_arr[ThisStep] = 1./(Temperature * BOLTZMANN_CONSTANT);
+      Partition_arr[ThisStep] = ThisPart / (MATRIX_SIZE * MATRIX_SIZE);
+      ThisStep++;
+      Temperature += DeltaT;
+    }
+}
+
+
+/*
+  Using the permuations of spins, generate every element
+  of the transfer matrix.
+*/
+
+void GenerateTransferMatrix(double temperature)
+{
+  int i, j, rowmin, rowmax;
+  double interaction, transfer_element,beta;
+
+  rowmin = ProcBoundaries[ThisTask];
+
+  if (ThisTask != NTasks - 1)
+    rowmax = ProcBoundaries[ThisTask + 1] - ProcBoundaries[ThisTask];
+  else
+    rowmax = TransferCount - ProcBoundaries[ThisTask];
+
+  /*
+    Now get the elements
+  */
+
+  beta = 1. / (temperature * BOLTZMANN_CONSTANT);
+  for (i=rowmin; i < rowmax; i++)
+    for (j=0; j < TransferCount; j++)
+      {
+	//printf("i,j = %d, %d\n",i,j);
+	interaction = IsingInteraction(LocalSpinMatrix[i], LocalSpinMatrix[j], ACTION, B_FIELD);
+	//beta = 1. / (temperature * BOLTZMANN_CONSTANT);
+	transfer_element = exp(-beta * interaction);
+	//printf("Transfer Element, interaction  = %f, %f\n",transfer_element, interaction);
+	LocalTransferMatrix[i][j] = transfer_element;
+      }
+
+  //PrintMatrix(LocalTransferMatrix, rowmax - rowmin, TransferCount);
+}
+
+
 
 /*
   For a sequence of spins, calculate the interaction energy
@@ -16,6 +83,15 @@ double IsingInteraction(double * spin1, double * spin2, double action, double ap
   double sum_interaction;
 
   sum_interaction=0.;
+
+  for (i=0; i < MATRIX_SIZE; i++)
+    {
+      sum_interaction += spin1[i] * spin2[i];
+      sum_interaction += 0.5 * spin1[i] * spin1[(i+1)%MATRIX_SIZE];
+      sum_interaction += 0.5 * spin2[i] * spin2[(i+1)%MATRIX_SIZE];
+    }
+
+  /*
   for (i=0; i < TransferCount; i++)
     {
       sum_interaction -= spin1[i] * spin2[i];
@@ -25,12 +101,13 @@ double IsingInteraction(double * spin1, double * spin2, double action, double ap
     {
       sum_interaction -= action * spin1[i] * spin1[i+1];
       sum_interaction -= applied_field * spin1[i];
-    }
+      }*/
 
   /*
     Add ghost row terms to impose BCs
   */
 
+  //printf("Sum Interaction = %f\n", sum_interaction);
   return sum_interaction;
 }
 
@@ -91,27 +168,15 @@ int PermutationAlreadyFound(double * arr)
 
   i = 0;
   j = 0;
-  //printf("Checking for repeats..\n");
   while (i < HeapCounter)
     {
-      //printf("Heap Counter = %d\n", HeapCounter);
       while (arr[j] == LocalSpinMatrix[i][j] && j < MATRIX_SIZE)
 	{
-	  //printf("arr[j] = %f\n", arr[j]);
-	  //printf("i,j = %d,%d\n", i, j);
 	  j++;
 	}
-      //printf("i,j = %d,%d\n", i, j);
       if (j == MATRIX_SIZE)
 	{
 	  wasFound = 1;
-	  //printf("Found repeat permutation\n");
-	 
-	  /*
-	  printf("repeat:\n");
-	  int k;
-	  for (k=0; k < MATRIX_SIZE; k++)
-	  printf("%f = %f\n", LocalSpinMatrix[i][k], arr[k]);*/
 	}
       j=0;
       i++;

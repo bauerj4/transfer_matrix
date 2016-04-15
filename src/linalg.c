@@ -15,11 +15,13 @@ double Power_Iteration(double ** mat, int N)
 {
   int i;
   double lambda_max, f_old_norm, f_new_norm, diff;
+  double * result_vector;
 
   diff = 1. / 1.e-127;  // Large number
 
   f_old = VectorMalloc(N);
   f_new = VectorMalloc(N);
+  result_vector = VectorMalloc(N);
 
   // Guess a normalized vector of ones
   for (i=0; i < N; i++)
@@ -50,7 +52,15 @@ double Power_Iteration(double ** mat, int N)
 
     }
 
-  return 0;
+  for (i=0; i<N; i++)
+    result_vector[i] = f_new[i];
+
+  f_new_norm = Norm(f_new, N);
+  MPI_MatrixMultiplyToVector(LocalTransferMatrix, result_vector, N);
+  lambda_max = Dot(f_new, result_vector,N);
+  lambda_max /= (f_new_norm * f_new_norm);
+
+  return lambda_max;
 }
 
 

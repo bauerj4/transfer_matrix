@@ -33,6 +33,8 @@ void Finalize();
   Thermodynamics
 */
 
+void TemperatureSweep();
+void GenerateTransferMatrix(double Temperature);
 double IsingInteraction(double * spin1, double * spin2, double action, double applied_field);
 void GeneratePermutation();
 void HeapRecursive(int n, double * arr);
